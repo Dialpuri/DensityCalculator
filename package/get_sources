@@ -60,4 +60,6 @@ tar xf fftw-2.1.5.tar.gz
 echo
 fi
 
+git diff . < resinfo_path.txt
+
 cd ..
