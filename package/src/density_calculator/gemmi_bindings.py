@@ -52,20 +52,9 @@ def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str
     diff_mtz.spacegroup = mtz.spacegroup
     diff_mtz.set_cell_for_all(mtz.cell)
     diff_mtz.add_dataset('mFo-DFc')
-    diff_mtz.history = ["Difference Density Calculated By Clipper - Jordan Dialpuri, Kevin Cowtan, Marcin Wojdyr 2024"]
+    diff_mtz.history = ["Difference Density Calculated By Clipper - Binding Author - Jordan Dialpuri 2024"]
     diff_mtz.add_column('DELFWT', 'F')
     diff_mtz.add_column('PHDELWT', 'P')
     diff_mtz.set_data(diff_data)
     diff_mtz.ensure_asu()
     return diff_mtz
-
-
-def test():
-    mtz = gemmi.read_mtz_file("/Users/dialpuri/Development/difference-density/5fji/5fji-sf.mtz")
-    st = gemmi.read_structure("/Users/dialpuri/Development/difference-density/5fji/5fji-pnagremoved.pdb")
-    difference_mtz = calculate(st, mtz, ["FP", "SIGFP"])
-    difference_mtz.write_to_file('/Users/dialpuri/Development/difference-density/5fji/output.mtz')
-
-
-if __name__ == "__main__":
-    test()
