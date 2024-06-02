@@ -4,7 +4,7 @@ Density Calculator is a library for calculating a $mFo-DFc$ maps from `gemmi` in
 
 ## Installation 
     
-    pip install density_calculator
+    pip install density-calculator
 
 ## Usage
 
