@@ -3,11 +3,9 @@ import numpy as np
 import gemmi
 
 from .density_calculator import (calculate_difference_density, HKL,
-                                        SpaceGroup, Cell, Resolution, Atom,
-                                        Residue, Chain, Model, String,
-                                        Coord, MAtom)
-
-
+                                 SpaceGroup, Cell, Resolution, Atom,
+                                 Residue, Chain, Model, String,
+                                 Coord, MAtom)
 
 def bind_structure(structure: gemmi.Structure):
     m = Model()
@@ -31,6 +29,20 @@ def bind_structure(structure: gemmi.Structure):
     return m
 
 
+def get_atom_list(structure: gemmi.Structure):
+    atom_list = []
+    for chain in structure[0]:
+        for residue in chain:
+            for atom in residue:
+                a = Atom()
+                a.set_element(String(atom.element.name))
+                a.set_coord_orth(Coord(*atom.pos.tolist()))
+                a.set_occupancy(atom.occ)
+                a.set_u_iso(atom.b_iso)
+                atom_list.append(MAtom(a))
+    return atom_list
+
+
 def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str]):
     fobs = mtz.get_value_sigma(*column_names)
 
@@ -38,13 +50,14 @@ def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str
     values = fobs.value_array
 
     result = [np.append(hkls[i], [v[0], v[1]]) for i, v in enumerate(values)]
-    result = [HKL(int(h), int(k), int(l), v, s) for h,k,l,v,s in result]
+    result = [HKL(int(h), int(k), int(l), v, s) for h, k, l, v, s in result]
 
     spg = SpaceGroup(mtz.spacegroup.hm)
     cell = Cell(*mtz.cell.__getstate__())
     res = Resolution(mtz.resolution_high())
-    model = bind_structure(structure)
-    diff = calculate_difference_density(result, model, spg, cell, res)
+    atom_list = get_atom_list(structure)
+
+    diff = calculate_difference_density(result, atom_list, spg, cell, res)
 
     diff_data = np.array([[a.h, a.k, a.l, a.f, np.rad2deg(a.p)] for a in diff])
 

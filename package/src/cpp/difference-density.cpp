@@ -25,8 +25,14 @@ struct HKL {
 };
 using HKLVector = std::vector<HKL<float>>;
 
+void convert_bfactors_to_u_iso(std::vector<clipper::MAtom>& atom_list) {
+    for (auto& atom: atom_list) {
+        atom.set_u_iso(clipper::Util::b2u(atom.u_iso()));
+    }
+}
+
 HKLVector calculate_difference_density(HKLVector& arr,
-                                       clipper::MModel& model,
+                                       std::vector<clipper::MAtom>& atom_list,
                                        clipper::Spgr_descr& spg,
                                        clipper::Cell_descr& cell,
                                        clipper::Resolution& res
@@ -63,29 +69,18 @@ HKLVector calculate_difference_density(HKLVector& arr,
     }
 
     clipper::Grid_sampling grid = {spacegroup, unit_cell, res};
-    clipper::Xmap<float> xwrk = {spacegroup, unit_cell, grid};
-    clipper::MiniMol mol = {spacegroup, unit_cell};
-    mol.model() = model;
 
-    std::vector<clipper::MAtom> atoms;
-    for (int p = 0; p < mol.size(); p++) {
-        for (int m = 0; m < mol[p].size(); m++) {
-            for (int a = 0; a < mol[p][m].size(); a++) {
-                mol[p][m][a].set_u_iso(clipper::Util::b2u(mol[p][m][a].u_iso()));
-                atoms.push_back(mol[p][m][a]);
-            }
-        }
-    }
 
     if (debug) {
-        std::cout << "Performing calculation with " << atoms.size() << " atoms" << std::endl;
+        std::cout << "Performing calculation with " << atom_list.size() << " atoms" << std::endl;
         std::cout << "Resolition limit is " << res.limit() << std::endl;
         std::cout << "Cell is " << unit_cell.format() << std::endl;
     }
-    clipper::Atom_list atom_list = {atoms};
+
+    convert_bfactors_to_u_iso(atom_list);
     clipper::Xmap<float> calculated_map = {spacegroup, unit_cell, grid};
     clipper::EDcalc_iso<float> ed_calc = {2};
-    ed_calc(calculated_map, atoms);
+    ed_calc(calculated_map, atom_list);
     calculated_map.fft_to(fphic);
 
     clipper::HKL_data<clipper::data32::Flag> modeflag( fobs );
@@ -182,9 +177,8 @@ NB_MODULE(density_calculator, m) {
     nb::class_<clipper::MModel>(m, "Model")
             .def(nb::init<>())
             .def("insert", &clipper::MModel::insert, "atom"_a, "pos"_a);
-
+    
     m.def("calculate_difference_density",
           calculate_difference_density,
-          "array"_a, "structure"_a, "spacegroup"_a, "cell"_a, "resolution"_a);
-
+          "array"_a, "atom_list"_a, "spacegroup"_a, "cell"_a, "resolution"_a);
 }
