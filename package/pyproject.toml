@@ -21,7 +21,7 @@ dependencies=[
     'gemmi'
 ]
 [project.urls]
-Homepage = "https://github.com/Dialpuri/NucleoFind"
+Homepage = "https://github.com/Dialpuri/DensityCalculator"
 
 #[project.scripts]
 #diff_den = "density_calculator.calculate_density:main"
