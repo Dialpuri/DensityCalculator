@@ -1,0 +1,10 @@
+--- clipper/clipper/minimol/minimol_io_gemmi_standard.h	2024-06-02 10:17:16
++++ clipper/clipper/minimol/minimol_io_gemmi.h	2024-06-02 10:16:26
+@@ -55,6 +55,7 @@
+ #include <gemmi/to_json.hpp> // JsonWriter
+ #include <gemmi/align.hpp> // assign_label_seq_id
+ #include <gemmi/assembly.hpp> // shorten_chain_name
++#include <gemmi/resinfo.hpp> // find_tabulated_residue
+ 
+ 
+ namespace clipper {
