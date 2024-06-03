@@ -7,7 +7,7 @@ if [ -d "clipper" ]; then
     echo "Found clipper"
 else
     echo "Checking out clipper"
-    curl -L http://www.ysbl.york.ac.uk/jsd523/clipper-gemmi-wrapper-20240123.tar.gz -o clipper-gemmi-wrapper.tar.gz
+    curl -L http://www.ysbl.york.ac.uk/jsd523/clipper-gemmi-wrapper-20240603.tar.gz -o clipper-gemmi-wrapper.tar.gz
     echo "Unpacking fftw-2.1.5"
     tar xf clipper-gemmi-wrapper.tar.gz
     mv clipper-gemmi-wrapper clipper
@@ -59,7 +59,5 @@ echo "Unpacking fftw-2.1.5"
 tar xf fftw-2.1.5.tar.gz
 echo
 fi
-
-patch -p1 < patch_file.patch 
 
 cd ..
