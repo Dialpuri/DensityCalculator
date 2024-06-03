@@ -1,0 +1,12 @@
+diff --git a/clipper/clipper/minimol/minimol_io_gemmi.h b/clipper/clipper/minimol/minimol_io_gemmi.h
+index 54beea4..678461a 100644
+--- a/clipper/clipper/minimol/minimol_io_gemmi.h
++++ b/clipper/clipper/minimol/minimol_io_gemmi.h
+@@ -55,6 +55,7 @@
+ #include <gemmi/to_json.hpp> // JsonWriter
+ #include <gemmi/align.hpp> // assign_label_seq_id
+ #include <gemmi/assembly.hpp> // shorten_chain_name
++#include <gemmi/resinfo.hpp> // find_tabulated_residue
+ 
+ namespace clipper {
+ 
