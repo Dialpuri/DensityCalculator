@@ -8,11 +8,9 @@ if [ -d "clipper" ]; then
 else
     echo "Checking out clipper"
     curl -L http://www.ysbl.york.ac.uk/jsd523/clipper-gemmi-wrapper-20240603.tar.gz -o clipper-gemmi-wrapper.tar.gz
-    echo "Unpacking fftw-2.1.5"
+    echo "Unpacking clipper"
     tar xf clipper-gemmi-wrapper.tar.gz
     mv clipper-gemmi-wrapper clipper
-    patch -ruN -d . < resinfo_patch.txt
-
 fi 
 
 if [ -d "gemmi" ]; then
