@@ -60,6 +60,6 @@ tar xf fftw-2.1.5.tar.gz
 echo
 fi
 
-git apply patch_file.patch
+patch -p1 < patch_file.patch 
 
 cd ..
