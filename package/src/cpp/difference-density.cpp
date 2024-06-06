@@ -19,9 +19,12 @@ using namespace nb::literals;
 template <typename T>
 struct HKL {
     int h, k, l;
-    T f;
-    T p;
-    HKL(int h, int k, int l, T f, T p) : h(h), k(k), l(l), f(f), p(p){}
+    T fb_f;
+    T fb_p;
+    T fd_f;
+    T fd_p;
+
+    HKL(int h, int k, int l, T fb_f, T fb_p, T fd_f, T fd_p) : h(h), k(k), l(l), fb_f(fb_f), fb_p(fb_p), fd_f(fd_f), fd_p(fd_p) {}
 };
 using HKLVector = std::vector<HKL<float>>;
 
@@ -51,7 +54,7 @@ HKLVector calculate_difference_density(HKLVector& arr,
     for (auto &i: arr) {
         std::vector<int> hkl = {i.h, i.k, i.l};
         hkls.push_back({i.h, i.k, i.l});
-        auto pair = std::make_pair(i.f, i.p);
+        auto pair = std::make_pair(i.fb_f, i.fb_p);
         hkl_map.insert({hkl, pair});
     }
 
@@ -104,7 +107,11 @@ HKLVector calculate_difference_density(HKLVector& arr,
     for (HRI ih = fdiff.first(); !ih.last(); ih.next() ) {
         clipper::HKL hkl = ih.hkl();
         if (hkl.h() == 0 && hkl.l() == 0 && hkl.k() == 0) { continue;} // Don't include the 0,0,0 reflection
-        HKL output_hkl = {hkl.h(), hkl.k(), hkl.l(), fdiff[ih].f(), fdiff[ih].phi()};
+
+        clipper::datatypes::F_phi<float> fbest_reflection = fbest[ih];
+        clipper::datatypes::F_phi<float> fdiff_reflection = fdiff[ih];
+
+        HKL output_hkl = {hkl.h(), hkl.k(), hkl.l(), fbest_reflection.f(), fbest_reflection.phi(), fdiff_reflection.f(), fdiff_reflection.phi()};
         output_hkls.push_back(output_hkl);
     }
 
@@ -129,13 +136,14 @@ NB_MODULE(density_calculator, m) {
 
 
     nb::class_<HKL<float>>(m, "HKL")
-            .def(nb::init<int, int, int, float, float>())
+            .def(nb::init<int, int, int, float, float, float, float>())
             .def_ro("h", &HKL<float>::h)
             .def_ro("k", &HKL<float>::k)
             .def_ro("l", &HKL<float>::l)
-            .def_ro("f", &HKL<float>::f)
-            .def_ro("p", &HKL<float>::p);
-
+            .def_ro("fb_f", &HKL<float>::fb_f)
+            .def_ro("fb_p", &HKL<float>::fb_p)
+            .def_ro("fd_f", &HKL<float>::fd_f)
+            .def_ro("fd_p", &HKL<float>::fd_p);
 
     nb::class_<clipper::Spgr_descr>(m, "SpaceGroup")
             .def(nb::init<const std::string&>());

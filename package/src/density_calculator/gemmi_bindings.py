@@ -50,7 +50,7 @@ def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str
     values = fobs.value_array
 
     result = [np.append(hkls[i], [v[0], v[1]]) for i, v in enumerate(values)]
-    result = [HKL(int(h), int(k), int(l), v, s) for h, k, l, v, s in result]
+    result = [HKL(int(h), int(k), int(l), v, s, 0, 0) for h, k, l, v, s in result]
 
     spg = SpaceGroup(mtz.spacegroup.hm)
     cell = Cell(*mtz.cell.__getstate__())
@@ -59,15 +59,17 @@ def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str
 
     diff = calculate_difference_density(result, atom_list, spg, cell, res)
 
-    diff_data = np.array([[a.h, a.k, a.l, a.f, np.rad2deg(a.p)] for a in diff])
+    diff_data = np.array([[a.h, a.k, a.l, a.f[0], np.rad2deg(a.p[0]), a.f[1], np.rad2deg(a.p[1])] for a in diff])
 
     diff_mtz = gemmi.Mtz(with_base=True)
     diff_mtz.spacegroup = mtz.spacegroup
     diff_mtz.set_cell_for_all(mtz.cell)
     diff_mtz.add_dataset('mFo-DFc')
-    diff_mtz.history = ["Difference Density Calculated By Clipper - Binding Author - Jordan Dialpuri 2024"]
+    diff_mtz.history = ["Difference Density Calculated By Clipper"]
     diff_mtz.add_column('DELFWT', 'F')
     diff_mtz.add_column('PHDELWT', 'P')
+    diff_mtz.add_column('FWT', 'F')
+    diff_mtz.add_column('PHWT', 'P')
     diff_mtz.set_data(diff_data)
     diff_mtz.ensure_asu()
     return diff_mtz
