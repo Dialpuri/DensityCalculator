@@ -21,10 +21,13 @@ Density Calculator is a library for calculating a $mFo-DFc$ maps from `gemmi` in
     st: gemmi.Structure = gemmi.read_structure("model.pdb")
     
     # Calculate the difference map using density_calculator
-    difference_mtz: gemmi.Mtz = density_calculator.calculate(st, mtz, ["FP", "SIGFP"])
+    recalculated_mtz: gemmi.Mtz = density_calculator.calculate(st, mtz, ["FP", "SIGFP"])
+
+    # Transform the difference_mtz into a map for calculation use
+    best_map: gemmi.FloatGrid = recalculated_mtz.transform_f_phi_to_map("FWT", "PHWT")
     
     # Transform the difference_mtz into a map for calculation use
-    difference_map: gemmi.FloatGrid = difference_mtz.transform_f_phi_to_map("DELFWT", "PHDELWT")
+    difference_map: gemmi.FloatGrid = recalculated_mtz.transform_f_phi_to_map("DELFWT", "PHDELWT")
     
 
 ## Development 
