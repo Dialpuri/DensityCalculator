@@ -59,7 +59,7 @@ def calculate(structure: gemmi.Structure, mtz: gemmi.Mtz, column_names: List[str
 
     diff = calculate_difference_density(result, atom_list, spg, cell, res)
 
-    diff_data = np.array([[a.h, a.k, a.l, a.f[0], np.rad2deg(a.p[0]), a.f[1], np.rad2deg(a.p[1])] for a in diff])
+    diff_data = np.array([[a.h, a.k, a.l, a.fd_f, np.rad2deg(a.fd_p), a.fb_f, np.rad2deg(a.fb_p)] for a in diff])
 
     diff_mtz = gemmi.Mtz(with_base=True)
     diff_mtz.spacegroup = mtz.spacegroup
