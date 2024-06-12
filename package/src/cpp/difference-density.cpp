@@ -19,12 +19,14 @@ using namespace nb::literals;
 template <typename T>
 struct HKL {
     int h, k, l;
+    T f;
+    T sigf;
     T fb_f;
     T fb_p;
     T fd_f;
     T fd_p;
 
-    HKL(int h, int k, int l, T fb_f, T fb_p, T fd_f, T fd_p) : h(h), k(k), l(l), fb_f(fb_f), fb_p(fb_p), fd_f(fd_f), fd_p(fd_p) {}
+    HKL(int h, int k, int l, T fb_f, T fb_p, T fd_f, T fd_p, T f, T sigf) : h(h), k(k), l(l), fb_f(fb_f), fb_p(fb_p), fd_f(fd_f), fd_p(fd_p), f(f), sigf(sigf){}
 };
 using HKLVector = std::vector<HKL<float>>;
 
@@ -54,7 +56,7 @@ HKLVector calculate_difference_density(HKLVector& arr,
     for (auto &i: arr) {
         std::vector<int> hkl = {i.h, i.k, i.l};
         hkls.push_back({i.h, i.k, i.l});
-        auto pair = std::make_pair(i.fb_f, i.fb_p);
+        auto pair = std::make_pair(i.f, i.sigf);
         hkl_map.insert({hkl, pair});
     }
 
@@ -110,13 +112,133 @@ HKLVector calculate_difference_density(HKLVector& arr,
 
         clipper::datatypes::F_phi<float> fbest_reflection = fbest[ih];
         clipper::datatypes::F_phi<float> fdiff_reflection = fdiff[ih];
+        clipper::datatypes::F_sigF<float> fobs_reflection = fobs[ih];
 
-        HKL output_hkl = {hkl.h(), hkl.k(), hkl.l(), fbest_reflection.f(), fbest_reflection.phi(), fdiff_reflection.f(), fdiff_reflection.phi()};
+        HKL<float> output_hkl = {hkl.h(), hkl.k(), hkl.l(), fbest_reflection.f(), fbest_reflection.phi(), fdiff_reflection.f(),
+                          fdiff_reflection.phi(), fobs_reflection.f(), fobs_reflection.sigf()};
         output_hkls.push_back(output_hkl);
     }
 
     return output_hkls;
 }
+
+
+//HKLVector expand_fsigf_to_lower_symmetry(HKLVector& arr,
+//                                       clipper::Spgr_descr& spg,
+//                                       clipper::Cell_descr& cell,
+//                                       clipper::Resolution& res
+//) {
+//    bool debug = false;
+//    typedef clipper::HKL_info::HKL_reference_index HRI;
+//
+//    const clipper::Spacegroup spacegroup(spg);
+//    const clipper::Cell unit_cell(cell);
+//    clipper::HKL_info hkl_info = {spacegroup, unit_cell, res,
+//                                  true};
+//
+//    std::vector<clipper::HKL> hkls;
+//    hkls.reserve(arr.size());
+//    std::map<std::vector<int>, std::pair<float, float>> hkl_map = {};
+//    for (auto &i: arr) {
+//        std::vector<int> hkl = {i.h, i.k, i.l};
+//        hkls.push_back({i.h, i.k, i.l});
+//        auto pair = std::make_pair(i.fb_f, i.fb_p);
+//        hkl_map.insert({hkl, pair});
+//    }
+//
+//    hkl_info.add_hkl_list(hkls);
+//
+//    clipper::HKL_data<clipper::data32::F_sigF> fobs(hkl_info);
+//
+//    for (HRI ih = fobs.first(); !ih.last(); ih.next()) {
+//        auto hkl = ih.hkl();
+//        auto key = {hkl.h(), hkl.k(), hkl.l()};
+//        auto value = hkl_map[key];
+//        clipper::data32::F_sigF fphi = {value.first, value.second};
+//        fobs[ih] = fphi;
+//    }
+//
+//    clipper::Grid_sampling grid = {spacegroup, unit_cell, res};
+//      clipper::HKL_info newhkl( clipper::Spacegroup( clipper::Spgr_descr( 1 ) ),
+//                                unit_cell, res, true);
+//
+//      clipper::HKL_data<clipper::data32::F_sigF> newdata(newhkl);
+//
+//        clipper::HKL_info::HKL_reference_index ih;
+//        clipper::HKL_info::HKL_reference_coord ik( hkl_info, clipper::HKL() );
+//        for ( ih = newhkl.first(); !ih.last(); ih.next() ) {
+//            ik.set_hkl( ih.hkl() );
+//            newdata[ih] = fobs[ik];
+//        }
+//
+//    std::vector<HKL<float>> output_hkls;
+//    output_hkls.reserve(hkl_info.num_reflections());
+//    for (HRI ih = newdata.first(); !ih.last(); ih.next() ) {
+//        clipper::HKL hkl = ih.hkl();
+//
+//        HKL<float> output_hkl = {hkl.h(), hkl.k(), hkl.l(), (float)newdata[hkl].f(), (float)newdata[hkl].sigf(), 0.0, 0.0};
+//        output_hkls.push_back(output_hkl);
+//    }
+//
+//    return output_hkls;
+//}
+//
+//
+//HKLVector expand_fphi_to_lower_symmetry(HKLVector& arr,
+//                                         clipper::Spgr_descr& spg,
+//                                         clipper::Cell_descr& cell,
+//                                         clipper::Resolution& res
+//) {
+//    bool debug = false;
+//    typedef clipper::HKL_info::HKL_reference_index HRI;
+//
+//    const clipper::Spacegroup spacegroup(spg);
+//    const clipper::Cell unit_cell(cell);
+//    clipper::HKL_info hkl_info = {spacegroup, unit_cell, res,
+//                                  true};
+//
+//    std::vector<clipper::HKL> hkls;
+//    hkls.reserve(arr.size());
+//    std::map<std::vector<int>, std::pair<float, float>> hkl_map = {};
+//    for (auto &i: arr) {
+//        std::vector<int> hkl = {i.h, i.k, i.l};
+//        hkls.push_back({i.h, i.k, i.l});
+//        auto pair = std::make_pair(i.fb_f, i.fb_p);
+//        hkl_map.insert({hkl, pair});
+//    }
+//
+//    hkl_info.add_hkl_list(hkls);
+//
+//    clipper::HKL_data<clipper::data32::F_phi> fobs(hkl_info);
+//
+//    for (HRI ih = fobs.first(); !ih.last(); ih.next()) {
+//        auto hkl = ih.hkl();
+//        auto key = {hkl.h(), hkl.k(), hkl.l()};
+//        auto value = hkl_map[key];
+//        clipper::data32::F_phi fphi = {value.first, value.second};
+//        fobs[ih] = fphi;
+//    }
+//
+//    clipper::HKL_info newhkl( clipper::Spacegroup( clipper::Spgr_descr( 1 ) ),
+//                              unit_cell, res, true );
+//
+//    clipper::HKL_data<clipper::data32::F_phi> newdata(newhkl);
+//
+//    for (HRI ih = newhkl.first(); !ih.last(); ih.next() ) {
+//        newdata[ih] = fobs[ih.hkl()];
+//    }
+//
+//    std::vector<HKL<float>> output_hkls;
+//    for (HRI ih = newdata.first(); !ih.last(); ih.next() ) {
+//        clipper::HKL hkl = ih.hkl();
+//
+//        HKL<float> output_hkl = {hkl.h(), hkl.k(), hkl.l(), (float)newdata[hkl].f(), (float)newdata[hkl].phi(), 0.0, 0.0};
+//        output_hkls.push_back(output_hkl);
+//    }
+//
+//    return output_hkls;
+//}
+
 
 
 NB_MODULE(density_calculator, m) {
@@ -136,14 +258,16 @@ NB_MODULE(density_calculator, m) {
 
 
     nb::class_<HKL<float>>(m, "HKL")
-            .def(nb::init<int, int, int, float, float, float, float>())
+            .def(nb::init<int, int, int, float, float, float, float, float, float>())
             .def_ro("h", &HKL<float>::h)
             .def_ro("k", &HKL<float>::k)
             .def_ro("l", &HKL<float>::l)
             .def_ro("fb_f", &HKL<float>::fb_f)
             .def_ro("fb_p", &HKL<float>::fb_p)
             .def_ro("fd_f", &HKL<float>::fd_f)
-            .def_ro("fd_p", &HKL<float>::fd_p);
+            .def_ro("fd_p", &HKL<float>::fd_p)
+            .def_ro("f", &HKL<float>::f)
+            .def_ro("sigf", &HKL<float>::sigf);
 
     nb::class_<clipper::Spgr_descr>(m, "SpaceGroup")
             .def(nb::init<const std::string&>());
@@ -189,4 +313,8 @@ NB_MODULE(density_calculator, m) {
     m.def("calculate_difference_density",
           calculate_difference_density,
           "array"_a, "atom_list"_a, "spacegroup"_a, "cell"_a, "resolution"_a);
+
+//    m.def("expand_fsigf_to_p1", expand_fsigf_to_lower_symmetry, "array"_a, "spacegroup"_a, "cell"_a, "resolution"_a);
+//    m.def("expand_fphi_to_p1", expand_fphi_to_lower_symmetry, "array"_a, "spacegroup"_a, "cell"_a, "resolution"_a);
+
 }
