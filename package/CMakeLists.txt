@@ -67,86 +67,9 @@ link_directories(
         ${CMAKE_BINARY_DIR}
 )
 
-# add_library(
-#         nautilus_lib
-#         STATIC
-#         ${WRK_DIR}/src/cpp/nautilus-join.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-rebuild-bases.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-refine.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-sequence.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-ss-find.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-target.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-tidy.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-tools.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-util.cpp
-#         ${WRK_DIR}/src/cpp/nucleicacid_db.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-findml.cpp
-#         ${WRK_DIR}/src/cpp/nautilus-findml.h
-# )
-
-# add_executable(cnautilus ${WRK_DIR}/src/cpp/cnautilus.cpp)
-# set_target_properties(cnautilus PROPERTIES OUTPUT_NAME nautilus)
-# target_compile_features(cnautilus INTERFACE cxx_std_17)
-
-# target_include_directories(cnautilus PUBLIC checkout/gemmi)
 set(LINK_LIBS "gemmi_cpp nautilus_lib ccp4 fftw rfftw mmdb2 clipper-mmdb clipper-cif clipper-core clipper-contrib clipper-minimol clipper-ccp4 clipper-gemmi")
 
-# target_link_directories(nautilus_lib
-#         PUBLIC
-#         ${CMAKE_BINARY_DIR}/clipper/mmdb
-#         ${CMAKE_BINARY_DIR}/clipper/cif
-#         ${CMAKE_BINARY_DIR}/clipper/ccp4
-#         ${CMAKE_BINARY_DIR}/clipper/minimol
-#         ${CMAKE_BINARY_DIR}/clipper/core
-#         ${CMAKE_BINARY_DIR}/clipper/contrib
-#         ${CMAKE_BINARY_DIR}/fftw
-#         ${CMAKE_BINARY_DIR}/rfftw
-#         ${CMAKE_BINARY_DIR}/ccp4
-#         ${CMAKE_BINARY_DIR}/mmdb2
-#         ${CMAKE_BINARY_DIR}/gemmi
-# )
-
-# target_link_libraries(
-#         nautilus_lib
-#         PUBLIC
-#         clipper-mmdb
-#         clipper-cif
-#         clipper-ccp4
-#         clipper-minimol
-#         clipper-core
-#         clipper-contrib
-#         rfftw
-#         fftw
-#         ccp4
-#         mmdb2
-#         gemmi_cpp
-# )
-
-# target_link_libraries(
-#         cnautilus
-#         PRIVATE
-#         nautilus_lib
-# )
-
-# set(nautilus_HEADERS
-#         ${WRK_DIR}/src/cpp/nautilus-join.h
-#         ${WRK_DIR}/src/cpp/nautilus-rebuild-bases.h
-#         ${WRK_DIR}/src/cpp/nautilus-refine.h
-#         ${WRK_DIR}/src/cpp/nautilus-sequence.h
-#         ${WRK_DIR}/src/cpp/nautilus-ss-find.h
-#         ${WRK_DIR}/src/cpp/nautilus-target.h
-#         ${WRK_DIR}/src/cpp/nautilus-tidy.h
-#         ${WRK_DIR}/src/cpp/nautilus-tools.h
-#         ${WRK_DIR}/src/cpp/nautilus-util.h
-#         ${WRK_DIR}/src/cpp/nucleicacid_db.h
-#         ${WRK_DIR}/src/python/nautilus-include.h
-
-# )
-# set_target_properties(cnautilus PROPERTIES PUBLIC_HEADER "${nautilus_HEADERS}")
-# install(TARGETS cnautilus
-#         LIBRARY DESTINATION lib
-#         PUBLIC_HEADER DESTINATION ${WRK_DIR}/include/nautilus)
-
+if (SKBUILD)
 
 # Try to import all Python components potentially needed by nanobind
 find_package(Python 3.8
@@ -222,3 +145,78 @@ target_link_libraries(
 # Install directive for scikit-build-core
 
 install(TARGETS density_calculator LIBRARY DESTINATION density_calculator)
+endif()
+
+if (CMAKE_C_PLATFORM_ID STREQUAL "emscripten")
+#    set_target_properties( density_calculator
+#            PROPERTIES
+#            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm"
+#            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm"
+#            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/wasm"
+#    )
+
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../webapp)
+    add_executable(density_calculator ${WRK_DIR}/src/wasm/density-calculator-wasm.cpp)
+    set_target_properties (density_calculator  PROPERTIES OUTPUT_NAME density_calculator )
+    set_target_properties(density_calculator PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../webapp)
+    target_include_directories(density_calculator PUBLIC
+            ${WRK_DIR}/checkout/gemmi
+            ${WRK_DIR}/mmdb2
+            ${WRK_DIR}/clipper/mmdb
+            ${WRK_DIR}/clipper/cif
+            ${WRK_DIR}/clipper/core
+            ${WRK_DIR}/clipper/contrib
+            ${WRK_DIR}/clipper/ccp4
+            ${WRK_DIR}/clipper/minimol
+            ${WRK_DIR}/clipper/gemmi
+            ${WRK_DIR}/fftw
+            ${WRK_DIR}/rfftw
+            ${WRK_DIR}/ccp4
+    )
+
+
+    target_link_directories(density_calculator
+            PUBLIC
+            ${CMAKE_BINARY_DIR}/clipper/mmdb
+            ${CMAKE_BINARY_DIR}/clipper/cif
+            ${CMAKE_BINARY_DIR}/clipper/ccp4
+            ${CMAKE_BINARY_DIR}/clipper/minimol
+            ${CMAKE_BINARY_DIR}/clipper/contrib
+            ${CMAKE_BINARY_DIR}/clipper/core
+            ${CMAKE_BINARY_DIR}/clipper/gemmi
+            ${CMAKE_BINARY_DIR}/fftw
+            ${CMAKE_BINARY_DIR}/rfftw
+            ${CMAKE_BINARY_DIR}/ccp4
+            ${CMAKE_BINARY_DIR}/mmdb2
+            ${CMAKE_BINARY_DIR}/gemmi
+    )
+
+
+    target_link_libraries(
+            density_calculator
+            PRIVATE
+            clipper-gemmi
+            clipper-mmdb
+            clipper-cif
+            clipper-ccp4
+            clipper-minimol
+            clipper-contrib
+            clipper-core
+            rfftw
+            fftw
+            ccp4
+            mmdb2
+            gemmi_cpp
+    )
+
+    target_link_options(density_calculator PRIVATE
+            #                --preload-file data/linkage_torsions@/
+            -sEXIT_RUNTIME=1 -sASSERTIONS=2 -fexceptions
+            -sALLOW_MEMORY_GROWTH=1 --bind -sFORCE_FILESYSTEM=1 -sMODULARIZE=1
+            -sEXPORT_NAME=sails_module -sEXPORTED_RUNTIME_METHODS=['FS']
+            -sMODULARIZE=1 -sEXPORT_ES6=1 -sSTACK_SIZE=8000000 )
+
+    set_target_properties(density_calculator PROPERTIES COMPILE_FLAGS "-s ENVIRONMENT='web'")
+
+
+endif ()

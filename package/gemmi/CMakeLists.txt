@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(gemmi LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 message(STATUS "Compiling with C++ standard: ${CMAKE_CXX_STANDARD}")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -11,17 +11,23 @@ set(gemmi_src ${WRK_DIR}/checkout/gemmi)
 find_package(ZLIB)
 if (ZLIB_FOUND)
     include_directories("${ZLIB_INCLUDE_DIR}")
-    message(STATUS "The build will use zlib code from emscripten")
+else()
+    message(STATUS "The build will use zlib code from third_party/zlib.")
+    include_directories("${gemmi_src}/third_party/zlib")
 endif()
-
 include_directories("${gemmi_src}/include"
         "${gemmi_src}/third_party")
 
 add_library(gemmi_cpp STATIC
+        ${gemmi_src}/src/align.cpp
         ${gemmi_src}/src/assembly.cpp
         ${gemmi_src}/src/calculate.cpp
         ${gemmi_src}/src/crd.cpp
+        ${gemmi_src}/src/ddl.cpp
         ${gemmi_src}/src/eig3.cpp
+        ${gemmi_src}/src/gz.cpp
+        ${gemmi_src}/src/intensit.cpp
+        ${gemmi_src}/src/json.cpp
         ${gemmi_src}/src/mmcif.cpp
         ${gemmi_src}/src/mmread_gz.cpp
         ${gemmi_src}/src/mtz.cpp
@@ -35,7 +41,8 @@ add_library(gemmi_cpp STATIC
         ${gemmi_src}/src/to_pdb.cpp
         ${gemmi_src}/src/monlib.cpp
         ${gemmi_src}/src/topo.cpp
-        ${gemmi_src}/src/xds_ascii.cpp)
+        ${gemmi_src}/src/xds_ascii.cpp
+)
 
 #set_target_properties(gemmi_cpp PROPERTIES COMPILE_FLAGS "-fexceptions -pthread -s USE_ZLIB=1 -s USE_PTHREADS=1" )
 
@@ -86,7 +93,7 @@ set(gemmi_HEADERS
         ${gemmi_src}/include/gemmi/levmar.hpp
         ${gemmi_src}/include/gemmi/linkhunt.hpp
         ${gemmi_src}/include/gemmi/math.hpp
-#        ${gemmi_src}/include/gemmi/merge.hpp
+        #        ${gemmi_src}/include/gemmi/merge.hpp
         ${gemmi_src}/include/gemmi/metadata.hpp
         ${gemmi_src}/include/gemmi/mmcif.hpp
         ${gemmi_src}/include/gemmi/mmcif_impl.hpp
@@ -146,7 +153,7 @@ set(gemmi_HEADERS
 set(gemmi_third_party-headers_HEADERS
         ${gemmi_src}/include/gemmi/third_party/fast_float.h
         ${gemmi_src}/include/gemmi/third_party/pocketfft_hdronly.h
-#        ${gemmi_src}/include/gemmi/third_party/sajson.h
+        #        ${gemmi_src}/include/gemmi/third_party/sajson.h
         ${gemmi_src}/include/gemmi/third_party/tinydir.h
 )
 
