@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDB MTZ Calculator</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+<div class="container">
+    <h1>PDB MTZ Generator</h1>
+    <p>Generate an MTZ file from a PDB Entry</p>
+    <div class="search-bar" id="searchBar">
+        <input type="text" id="codeInput" placeholder="Enter a code">
+        <button id="generate">Generate</button>
+    </div>
+    <div id="loadingSpinner" class="spinner"></div>
+    <div id="downloadSection" class="download-link">
+        <p>Your processed file is ready:</p>
+        <a id="downloadLink" href="#" download>Download File</a>
+    </div>
+</div>
+<footer>
+    <p>Copyright © Jordan Dialpuri | University of York 2024</p>
+</footer>
+<script type="module">
+    import sails_module from "./density_calculator.js";
+
+    let wasmModule;
+    document.getElementById("generate").onclick=async() => {
+        await fetchFile();
+    };
+    const initializeWasm = () => {
+        return new Promise((resolve, reject) => {
+            sails_module().then((module) => {
+                wasmModule = module;
+                resolve();
+            }).catch(() => reject())
+        });
+    };
+
+    async function fetchFile() {
+        const codeInput = document.getElementById('codeInput');
+        const code = codeInput.value.trim();
+        const spinner = document.getElementById('loadingSpinner');
+        const downloadSection = document.getElementById('downloadSection');
+        const searchSection = document.getElementById('searchBar');
+        const downloadLink = document.getElementById('downloadLink');
+
+        if (!validCode(code)) {
+            triggerShakeEffect(codeInput);
+            return;
+        }
+
+        spinner.style.display = 'block';
+        downloadSection.style.display = 'none';
+        searchSection.style.display = 'none';
+
+        // Ensure WASM is initialized
+        if (!wasmModule) {
+            await initializeWasm();
+        }
+
+        const lowerCode = code.toLowerCase();
+
+        try {
+            const structure_factor_url = `https://www.ebi.ac.uk/pdbe/entry-files/download/r${lowerCode}sf.ent`
+            const coordinate_url = `https://www.ebi.ac.uk/pdbe/entry-files/download/pdb${lowerCode}.ent`
+
+
+            const structure_factor_file = await fetchTextFromURL(structure_factor_url)
+            const coordinate_file = await fetchTextFromURL(coordinate_url)
+            try {
+                wasmModule.generateMTZ(coordinate_file, structure_factor_file);
+                const fileData = wasmModule.FS.readFile('/calculated.mtz');
+                var blob = new Blob([fileData], {type: 'application/octet-stream'});
+                downloadLink.download = `${code}.mtz`
+                downloadLink.href = window.URL.createObjectURL(blob);
+                downloadLink.innerText = `Download ${code}.mtz`
+                downloadSection.style.display = 'flex';
+
+            } catch(e) {
+                console.error(e)
+            }
+
+        } catch (e) {
+            console.error(e)
+            spinner.style.display = 'none';
+            searchSection.style.display = 'block';
+            triggerShakeEffect(codeInput);
+            showError(codeInput)
+        }
+        //
+
+        spinner.style.display = 'none';
+
+
+        // Call the WASM function
+        // try {
+        //     const resultPointer = wasmModule._processCode(code); // Example function call
+        //     const resultString = wasmModule.UTF8ToString(resultPointer);
+        //
+        //     // Create and trigger a file download
+        //     const blob = new Blob([resultString], { type: 'text/plain' });
+        //     const downloadLink = document.getElementById('downloadLink');
+        //     downloadLink.href = URL.createObjectURL(blob);
+        //     downloadLink.download = `${code}.txt`;
+        //     downloadLink.innerHTML = `Download ${code}.txt`;
+        //     document.getElementById('downloadSection').style.display = 'flex';
+        // } catch (error) {
+        //     console.error("Error in WASM function:", error);
+        //     alert("Something went wrong while processing your code.");
+        // }
+    }
+
+    async function fetchTextFromURL(url) {
+        return fetch(url)
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Network error');
+                }
+                return await response.text();
+            })
+            .then(async (file) => {
+                return file;
+            })
+            .catch(async (error) => {
+                return await Promise.reject(error);
+            });
+
+    }
+
+    function triggerShakeEffect(element) {
+        element.classList.add('shake');
+        const savedPlaceholder = element.placeholder;
+        element.placeholder = "Code not valid"
+        setTimeout(() => {
+            element.classList.remove('shake')
+        }, 500);
+        setTimeout(() => element.placeholder = savedPlaceholder, 1000);
+    }
+
+    function showError(element) {
+        element.value = ""
+        const savedPlaceholder = "Enter a code";
+        element.placeholder = "There was an error with that code"
+        setTimeout(() => element.placeholder = savedPlaceholder, 1000);
+
+    }
+
+    function validCode(code) {
+        return code.length === 4;
+    }
+
+</script>
+</body>
+</html>
